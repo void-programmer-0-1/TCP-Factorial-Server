@@ -1,1 +1,0 @@
-Factorial Server with master worker model using queue

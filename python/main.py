@@ -1,5 +1,5 @@
 import asyncio
-import fastmath
+from fib import fibonacci 
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -18,8 +18,8 @@ async def handler(reader, writer):
         loop = asyncio.get_running_loop()
 
         result = await loop.run_in_executor(
-            executor=executor,
-            fastmath.fib,
+            executor,
+            fibonacci,
             number
         )
     

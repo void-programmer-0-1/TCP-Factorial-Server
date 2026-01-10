@@ -1,50 +1,48 @@
 import asyncio
-from fib import fibonacci 
+import factorial
 from concurrent.futures import ThreadPoolExecutor
-
 
 executor = ThreadPoolExecutor()
 
-
-async def handler(reader, writer):
-
+async def handle_client(reader, writer):
     addr = writer.get_extra_info("peername")
-    print(f"Connected to {addr}")
+    print(f"Client connected: {addr}")
 
     try:
         data = await reader.readline()
-        number = int(data.decode().strip())
+        n = int(data.decode().strip())
 
         loop = asyncio.get_running_loop()
 
+        # Call Cython+C++ Fibonacci without blocking event loop
         result = await loop.run_in_executor(
             executor,
-            fibonacci,
-            number
+            factorial.factorial,
+            n
         )
-    
-    except Exception as err:    
-        writer.write(f"Error {str(err)}\n".encode())
-    
+
+        writer.write(f"{result}\n".encode())
+        await writer.drain()
+
+    except Exception as e:
+        writer.write(f"Error: {e}\n".encode())
+
     finally:
         writer.close()
         await writer.wait_closed()
-        print(f"Closed: {addr}")
-
+        print(f"Client disconnected: {addr}")
 
 async def main():
-
     server = await asyncio.start_server(
-        handler,
-        "127.0.0.1",
-        8000
+        handle_client,
+        host="127.0.0.1",
+        port=9000
     )
 
-    print("Async TCP Server running in port 8000")
+    print("Fibonacci server running on port 9000")
 
     async with server:
         await server.serve_forever()
-    
 
 if __name__ == "__main__":
     asyncio.run(main())

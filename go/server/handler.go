@@ -37,7 +37,7 @@ func handleClient(conn net.Conn) {
 
 		// Quit command
 		if cmd == "quit" {
-			writeLine(writer, "Bye 👋")
+			writeLine(writer, "Bye")
 			return
 		}
 

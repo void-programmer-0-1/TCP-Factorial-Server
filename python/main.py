@@ -1,48 +1,53 @@
 import asyncio
+import uvloop
 import factorial
-from concurrent.futures import ThreadPoolExecutor
+import os
 
-executor = ThreadPoolExecutor()
+HOST = "127.0.0.1"
+PORT = 9000
+MAX_N = 5000
 
-async def handle_client(reader, writer):
-    addr = writer.get_extra_info("peername")
-    print(f"Client connected: {addr}")
+asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+async def handle_client(reader: asyncio.StreamReader,
+                        writer: asyncio.StreamWriter):
     try:
-        data = await reader.readline()
-        n = int(data.decode().strip())
+        while True:
+            data = await reader.readline()
+            if not data:
+                break  # client closed
 
-        loop = asyncio.get_running_loop()
+            try:
+                n = int(data)
+                if n < 0 or n > MAX_N:
+                    writer.write(b"ERROR\n")
+                else:
+                    res = factorial.factorial(n)
+                    writer.write(res + b"\n")
+            except Exception:
+                writer.write(b"ERROR\n")
 
-        # Call Cython+C++ Fibonacci without blocking event loop
-        result = await loop.run_in_executor(
-            executor,
-            factorial.factorial,
-            n
-        )
-
-        writer.write(f"{result}\n".encode())
-        await writer.drain()
-
-    except Exception as e:
-        writer.write(f"Error: {e}\n".encode())
+            await writer.drain()
 
     finally:
         writer.close()
         await writer.wait_closed()
-        print(f"Client disconnected: {addr}")
+
 
 async def main():
     server = await asyncio.start_server(
         handle_client,
-        host="127.0.0.1",
-        port=9000
+        HOST,
+        PORT,
+        reuse_port=True,
+        backlog=4096
     )
 
-    print("Fibonacci server running on port 9000")
+    print(f"Worker {os.getpid()} listening on {PORT}")
 
     async with server:
         await server.serve_forever()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

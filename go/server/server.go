@@ -20,10 +20,10 @@ func (s *Server) Start() error {
 	var err error
 	s.listner, err = net.Listen("tcp", s.address)
 	if err != nil {
-		log.Fatal("Error Occured while getting TCP connection on port 8080 ", err)
+		log.Fatal("Error Occured while getting TCP connection on port 9000 ", err)
 	}
 
-	log.Println("Created TCP connection and connection is listening on port 8080")
+	log.Println("Created TCP connection and connection is listening on port 9000")
 
 	for {
 
